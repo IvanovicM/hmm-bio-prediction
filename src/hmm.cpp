@@ -1,5 +1,4 @@
 #include <vector>
-
 #include <hmm.h>
 
 using namespace std;
