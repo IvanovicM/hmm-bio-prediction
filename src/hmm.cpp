@@ -124,7 +124,9 @@ vector<int> HMM::viterbi(vector<int> &y)
 
     // Making V and x
     for (int i = 0; i < n; i++)
+    {
         V[i][0] = log(pi[i]) + log(O[i][ y[0] ]);
+    }
 
     for (int j = 1; j < y.size(); j++)
     {
@@ -194,26 +196,24 @@ pair< pair<double**, double*>, double> HMM::fwd(vector<int> &y)
     }
     c[0] = 1.0 / sumc;
 
-    for (int i = 1; i < y.size(); i++)
+    for (int j = 1; j < y.size(); j++)
     {
         sumc = 0;
-        for (int j = 0; j < n; j++)
+        for (int i = 0; i < n; i++)
         {
             double sum = 0;
             for (int k = 0; k < n; k++)
             {
-                sum += alpha[k][i - 1] * T[k][j];
+                sum += alpha[k][j - 1] * T[k][i];
             }
 
-            alpha[j][i] = O[j][ y[i] ] * sum;
-            sumc += alpha[j][i];
+            alpha[i][j] = O[i][ y[j] ] * sum;
+            sumc += alpha[i][j];
         }
-        c[i] = 1.0 / sumc;
-    }
 
-    // Making alpha hat
-    for (int j = 0; j < y.size(); j++)
-    {
+        c[j] = 1.0 / sumc;
+
+        // Making alpha hat
         for (int i = 0; i < n; i++)
         {
             alpha[i][j] = alpha[i][j] * c[j];
@@ -250,14 +250,8 @@ double** HMM::backward(vector<int> &y, double* c)
             {
                 beta[i][j]+= T[i][k] * O[k][ y[j + 1] ] * beta[k][j + 1];
             }
-        }
-    }
 
-    // Making beta hat
-    for (int j = 0; j < y.size() - 1; j++)
-    {
-        for (int i = 0; i < n; i++)
-        {
+            // Making beta hat
             beta[i][j] = beta[i][j] * c[j + 1];
         }
     }
