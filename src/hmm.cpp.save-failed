@@ -143,7 +143,6 @@ vector<int> HMM::viterbi(vector<int> &y)
             }
         }
     }
-
     // Finding the most probable sequence of conditions
     // Set of conditions if it is possible, -1 for each member, otherwise
     double maxx = V[0][y.size() - 1];
@@ -226,10 +225,10 @@ pair< pair<double**, double*>, double> HMM::fwd(vector<int> &y)
         L -= log(c[i]);
     }
 
-    return make_pair(make_pair(alpha, c), L);
+    return make_pair(make_pair<alpha, c>, L);
 }
 
-double** HMM::backward(vector<int> &y, double* c)
+double** HMM::backward(vector<int> &y, double* c);
 {
     double** beta = new double* [n];
     for (int i = 0; i < n; i++)

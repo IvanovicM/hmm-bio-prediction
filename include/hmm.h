@@ -1,4 +1,4 @@
-#include <vector>
+#include <bits/stdc++.h>
 
 class HMM
 {
@@ -8,6 +8,13 @@ class HMM
         double *pi; // start-state probability vector
         double **T; // transition probability matrix
         double **O; // output probability matrix
+
     public:
-        std::vector<int> viterbi(std::vector<int> &Y);
+        HMM(int n, int m);
+        HMM (int n, int m, double *pi, double **T, double **O);
+        ~HMM();
+
+        std::vector<int> viterbi(std::vector<int> &y);
+        std::pair< std::pair<double**, double*>, double> fwd(std::vector<int> &y);
+        double** backward(std::vector<int> &y, double* c);
 };
