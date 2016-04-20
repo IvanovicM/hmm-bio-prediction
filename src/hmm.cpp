@@ -132,11 +132,11 @@ vector<int> HMM::viterbi(vector<int> &y)
     {
         for (int i = 0; i < n; i++)
         {
-            V[i][j] = V[0][j-1] + log(T[0][i]) + log(O[i][ y[j] ]);
+            V[i][j] = V[0][j - 1] + log(T[0][i]) + log(O[i][ y[j] ]);
             x[i][j] = 0;
             for (int l = 1; l < n; l++)
             {
-                double p = V[l][j-1] + log(T[l][i]) + log(O[i][ y[j] ]);
+                double p = V[l][j - 1] + log(T[l][i]) + log(O[i][ y[j] ]);
                 if (p > V[i][j])
                 {
                     V[i][j] = p;
@@ -195,6 +195,10 @@ pair< pair<double**, double*>, double> HMM::fwd(vector<int> &y)
         sumc += alpha[i][0];
     }
     c[0] = 1.0 / sumc;
+    for (int i = 0; i < n; i++)
+    {
+        alpha[i][0] = alpha[i][0] * c[0];
+    }
 
     for (int j = 1; j < y.size(); j++)
     {
