@@ -110,16 +110,18 @@ HMM::~HMM () // destructor
 
 vector<int> HMM::viterbi(vector<int> &y)
 {
-    vector<int> vect(y.size());
+    int len = y.size();
+
+    vector<int> vect(len);
     double** V = new double* [n];
     for (int i = 0; i < n; i++)
     {
-        V[i] = new double[y.size()];
+        V[i] = new double[len];
     }
     double** x = new double* [n];
     for (int i = 0; i < n; i++)
     {
-        x[i] = new double[y.size()];
+        x[i] = new double[len];
     }
 
     // Making V and x
@@ -128,7 +130,7 @@ vector<int> HMM::viterbi(vector<int> &y)
         V[i][0] = log(pi[i]) + log(O[i][ y[0] ]);
     }
 
-    for (int j = 1; j < y.size(); j++)
+    for (int j = 1; j < len; j++)
     {
         for (int i = 0; i < n; i++)
         {
@@ -148,27 +150,27 @@ vector<int> HMM::viterbi(vector<int> &y)
 
     // Finding the most probable sequence of conditions
     // Set of conditions if it is possible, -1 for each member, otherwise
-    double maxx = V[0][y.size() - 1];
-    vect[y.size() - 1] = 0;
+    double maxx = V[0][len - 1];
+    vect[len - 1] = 0;
     for (int i = 1; i < n; i++)
     {
-        if (V[i][y.size() - 1] > maxx)
+        if (V[i][len - 1] > maxx)
         {
-            maxx = V[i][y.size() - 1];
-            vect[y.size() - 1] = i;
+            maxx = V[i][len - 1];
+            vect[len - 1] = i;
         }
     }
 
     if (maxx < 0 && isinf(maxx))
     {
-        for (int i = 0; i < y.size(); i++)
+        for (int i = 0; i < len; i++)
         {
             vect[i] = -1;
         }
     }
     else
     {
-        for (int i = y.size() - 1; i > 0; i--)
+        for (int i = len - 1; i > 0; i--)
         {
             vect[i - 1] = x[ vect[i] ][i];
         }
@@ -179,12 +181,14 @@ vector<int> HMM::viterbi(vector<int> &y)
 
 pair< pair<double**, double*>, double> HMM::fwd(vector<int> &y)
 {
+    int len = y.size();
+
     double** alpha = new double* [n];
     for (int i = 0; i < n; i++)
     {
-        alpha[i] = new double[y.size()];
+        alpha[i] = new double[len];
     }
-    double* c = new double[y.size()];
+    double* c = new double[len];
     double L;
 
     // Making alpha and c
@@ -200,7 +204,7 @@ pair< pair<double**, double*>, double> HMM::fwd(vector<int> &y)
         alpha[i][0] = alpha[i][0] * c[0];
     }
 
-    for (int j = 1; j < y.size(); j++)
+    for (int j = 1; j < len; j++)
     {
         sumc = 0;
         for (int i = 0; i < n; i++)
@@ -225,7 +229,7 @@ pair< pair<double**, double*>, double> HMM::fwd(vector<int> &y)
     }
 
     // calculating (log)L
-    for (int i = 0; i < y.size(); i++)
+    for (int i = 0; i < len; i++)
     {
         L -= log(c[i]);
     }
@@ -235,17 +239,19 @@ pair< pair<double**, double*>, double> HMM::fwd(vector<int> &y)
 
 double** HMM::backward(vector<int> &y, double* c)
 {
+    int len = y.size();
+
     double** beta = new double* [n];
     for (int i = 0; i < n; i++)
     {
-        beta[i] = new double[y.size()];
+        beta[i] = new double[len];
     }
 
     // Making beta
     for (int i = 0; i < n; i++)
-        beta[i][y.size() - 1] = 1;
+        beta[i][len - 1] = 1;
 
-    for (int j = y.size() - 2; j >= 0; j--)
+    for (int j = len - 2; j >= 0; j--)
     {
         for (int i = 0; i < n; i++)
         {
@@ -261,4 +267,88 @@ double** HMM::backward(vector<int> &y, double* c)
     }
 
     return beta;
+}
+
+void HMM::baumwelch(vector<int> &y, int iter, double tolerance)
+{
+    int len = y.size();
+    double old_L = 0.0;
+
+    while (iter--)
+    {
+        // Making next matrix O -> OO
+        double** OO = new double* [n];
+        for (int i = 0; i < n; i++)
+        {
+            OO[i] = new double[m];
+            for (int j = 0; j < m; j++)
+                OO[i][j] = 0;
+        }
+
+        // Run the forward and backward algorithm
+        pair<pair<double**, double*>, double> x = fwd(y);
+        double** alpha = x.first.first;
+        double* c = x.first.second;
+        double L = x.second;
+        double** beta = backward(y, c);
+
+        for (int i = 0; i < n; i++)
+        {
+            // Calculating pi
+            pi[i] = alpha[i][0] * beta[i][0];
+
+            // Calculating common denominator
+            // DD = sum_gamma
+            double DD = 0.0;
+            for (int t = 0; t < len - 1; t++)
+            {
+                DD+= alpha[i][t] * beta[i][t];
+            }
+
+            // Calculating TT
+            // TT[i][j] = sum_xi / sum_gamma
+            for (int j = 0; j < n; j++)
+            {
+                double NN = 0.0;
+                for (int t = 0; t < len - 1; t++)
+                {
+                    NN+= c[t + 1] * alpha[i][t] * O[j][ y[t + 1] ] * beta[j][t + 1];
+                }
+                T[i][j] *= NN / DD;
+            }
+
+            // Calculating OO
+            // OO[i][j] = sum_gamma*(y[t] == j) / sum_gamma
+            DD+= alpha[i][len - 1] * beta[i][len - 1];
+            for (int t = 0; t < len; t++)
+            {
+                OO[i][ y[t] ]+= alpha[i][t] * beta[i][t];
+            }
+            for (int j = 0; j < m; j++)
+            {
+                OO[i][j]/= DD;
+            }
+        }
+
+        // Cleaning: alpha, beta, c, O
+        for (int i = 0; i < len; i++)
+        {
+            delete[] alpha[i];
+            delete[] beta[i];
+        }
+        delete[] alpha;
+        delete[] beta;
+        delete[] c;
+
+        for (int i = 0; i < n; i++)
+        {
+            delete[] O[i];
+        }
+        delete[] O;
+        O = OO;
+
+        // Checking if the tolerance is satisfied
+        if (fabs(old_L - L) < tolerance) return;
+        old_L = L;
+    }
 }
