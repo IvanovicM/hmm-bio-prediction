@@ -18,4 +18,6 @@ class HMM
         std::pair< std::pair<double**, double*>, double> fwd(std::vector<int> &y);
         double** backward(std::vector<int> &y, double* c);
         void baumwelch(std::vector<int> &y, int iter, double tolerance);
+
+        void writeParameters();
 };

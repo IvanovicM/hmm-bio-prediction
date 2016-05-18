@@ -42,7 +42,7 @@ HMM::HMM (int n, int m) // constructor with random generated parameters
     this -> O = new double*[n];
     for (int i = 0; i < n; i++)
     {
-        this -> O[i] = new double[n];
+        this -> O[i] = new double[m];
         sum = 0;
         for (int j = 0; j < m; j++)
         {
@@ -189,7 +189,7 @@ pair< pair<double**, double*>, double> HMM::fwd(vector<int> &y)
         alpha[i] = new double[len];
     }
     double* c = new double[len];
-    double L;
+    double L = 0.0;
 
     // Making alpha and c
     double sumc = 0;
@@ -204,7 +204,7 @@ pair< pair<double**, double*>, double> HMM::fwd(vector<int> &y)
         alpha[i][0] = alpha[i][0] * c[0];
     }
 
-    for (int j = 1; j < len; j++)
+    for (int t = 1; t < len; t++)
     {
         sumc = 0;
         for (int i = 0; i < n; i++)
@@ -212,26 +212,26 @@ pair< pair<double**, double*>, double> HMM::fwd(vector<int> &y)
             double sum = 0;
             for (int k = 0; k < n; k++)
             {
-                sum += alpha[k][j - 1] * T[k][i];
+                sum += alpha[k][t - 1] * T[k][i];
             }
 
-            alpha[i][j] = O[i][ y[j] ] * sum;
-            sumc += alpha[i][j];
+            alpha[i][t] = O[i][ y[t] ] * sum;
+            sumc += alpha[i][t];
         }
 
-        c[j] = 1.0 / sumc;
+        c[t] = 1.0 / sumc;
 
         // Making alpha hat
         for (int i = 0; i < n; i++)
         {
-            alpha[i][j] = alpha[i][j] * c[j];
+            alpha[i][t] = alpha[i][t] * c[t];
         }
     }
 
     // calculating (log)L
-    for (int i = 0; i < len; i++)
+    for (int t = 0; t < len; t++)
     {
-        L -= log(c[i]);
+        L -= log(c[t]);
     }
 
     return make_pair(make_pair(alpha, c), L);
@@ -249,20 +249,20 @@ double** HMM::backward(vector<int> &y, double* c)
 
     // Making beta
     for (int i = 0; i < n; i++)
-        beta[i][len - 1] = 1;
+        beta[i][len - 1] = 1.0;
 
-    for (int j = len - 2; j >= 0; j--)
+    for (int t = len - 2; t >= 0; t--)
     {
         for (int i = 0; i < n; i++)
         {
-            beta[i][j] = 0;
+            beta[i][t] = 0.0;
             for (int k = 0; k < n; k++)
             {
-                beta[i][j]+= T[i][k] * O[k][ y[j + 1] ] * beta[k][j + 1];
+                beta[i][t]+= T[i][k] * O[k][ y[t + 1] ] * beta[k][t + 1];
             }
 
             // Making beta hat
-            beta[i][j] = beta[i][j] * c[j + 1];
+            beta[i][t] = beta[i][t] * c[t + 1];
         }
     }
 
@@ -272,24 +272,22 @@ double** HMM::backward(vector<int> &y, double* c)
 void HMM::baumwelch(vector<int> &y, int iter, double tolerance)
 {
     int len = y.size();
-    double old_L = 0.0;
+    double L, old_L = 0.0;
 
-    while (iter--)
+    for (int itr = 0; itr < iter; itr++)
     {
         // Making next matrix O -> OO
         double** OO = new double* [n];
         for (int i = 0; i < n; i++)
         {
             OO[i] = new double[m];
-            for (int j = 0; j < m; j++)
-                OO[i][j] = 0;
         }
 
         // Run the forward and backward algorithm
         pair<pair<double**, double*>, double> x = fwd(y);
         double** alpha = x.first.first;
         double* c = x.first.second;
-        double L = x.second;
+        L = x.second;
         double** beta = backward(y, c);
 
         for (int i = 0; i < n; i++)
@@ -319,6 +317,9 @@ void HMM::baumwelch(vector<int> &y, int iter, double tolerance)
 
             // Calculating OO
             // OO[i][j] = sum_gamma*(y[t] == j) / sum_gamma
+            for (int j = 0; j < m; j++)
+                OO[i][j] = 0.0;
+
             DD+= alpha[i][len - 1] * beta[i][len - 1];
             for (int t = 0; t < len; t++)
             {
@@ -331,7 +332,7 @@ void HMM::baumwelch(vector<int> &y, int iter, double tolerance)
         }
 
         // Cleaning: alpha, beta, c, O
-        for (int i = 0; i < len; i++)
+        for (int i = 0; i < n; i++)
         {
             delete[] alpha[i];
             delete[] beta[i];
@@ -348,7 +349,35 @@ void HMM::baumwelch(vector<int> &y, int iter, double tolerance)
         O = OO;
 
         // Checking if the tolerance is satisfied
-        if (fabs(old_L - L) < tolerance) return;
+        if (fabs(old_L - L) < tolerance) break;
         old_L = L;
     }
+}
+
+void HMM::writeParameters()
+{
+    printf("pi:\n");
+    for (int i = 0; i < n; i++)
+    {
+        printf("%lf ", pi[i]);
+    }
+    printf("\n\n");
+
+    printf("O:\n");
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < m; j++)
+            printf("%lf ", O[i][j]);
+        printf("\n");
+    }
+    printf("\n");
+
+    printf("T:\n");
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+            printf("%lf ", T[i][j]);
+        printf("\n");
+    }
+    printf("\n");
 }
