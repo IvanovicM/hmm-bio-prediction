@@ -110,8 +110,8 @@ HMM::HMM () // constructor with random generated parameters
         this -> T[i + 56][56 + 20 - i] = 1 + rand() % 100;
         this -> T[i + 56][56 + 21 - i] = 1 + rand() % 100;
     }
-    T[56][98] = T[56][77];
-    T[56][77] = 0.0;
+    this -> T[56][98] = this -> T[56][77];
+    this -> T[56][77] = 0.0;
     // outglob - o
     this -> T[66][66] = 1 + rand() % 100;
     // short loop 11-20 - o
@@ -137,7 +137,7 @@ HMM::HMM () // constructor with random generated parameters
     {
         sum = 0.0;
         for (int j = 0; j < n; j++)
-            sum+= T[i][j];
+            sum+= this -> T[i][j];
         for (int j = 0; j < n; j++)
             this -> T[i][j] /= sum;
     }
