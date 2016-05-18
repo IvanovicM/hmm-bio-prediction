@@ -63,7 +63,7 @@ HMM::HMM () // constructor with random generated parameters
     this -> pi = new double[n];
     for (int i = 0; i < n; i++)
     {
-        this -> pi[i] = 0;
+        this -> pi[i] = 0.0;
     }
     pi[0] = 1 + rand() % 100;
     pi[56] = 1 + rand() % 100;
@@ -80,12 +80,12 @@ HMM::HMM () // constructor with random generated parameters
         this -> T[i] = new double[n];
         for (int j = 0; j < n; j++)
         {
-            this -> T[i][j] = 0;
+            this -> T[i][j] = 0.0;
         }
         this -> T[i][(i+1)%n] = 1 + rand() % 100;
     }
     this -> T[76][98] = this -> T[76][77];
-    this -> T[76][77] = 0;
+    this -> T[76][77] = 0.0;
     this -> T[55][77] = 1 + rand() % 100;
 
     // inloop 1-10 - i
@@ -110,6 +110,8 @@ HMM::HMM () // constructor with random generated parameters
         this -> T[i + 56][56 + 20 - i] = 1 + rand() % 100;
         this -> T[i + 56][56 + 21 - i] = 1 + rand() % 100;
     }
+    T[56][98] = T[56][77];
+    T[56][77] = 0.0;
     // outglob - o
     this -> T[66][66] = 1 + rand() % 100;
     // short loop 11-20 - o
@@ -132,18 +134,20 @@ HMM::HMM () // constructor with random generated parameters
 
     sum = 0.0;
     for (int i = 0; i < n; i++)
+    {
+        sum = 0.0;
         for (int j = 0; j < n; j++)
             sum+= T[i][j];
-    for (int i = 0; i < n; i++)
         for (int j = 0; j < n; j++)
             this -> T[i][j] /= sum;
+    }
 
     // O
     this -> O = new double*[n];
     for (int i = 0; i < n; i++)
     {
         this -> O[i] = new double[m];
-        sum = 0;
+        sum = 0.0;
         for (int j = 0; j < m; j++)
         {
             this -> O[i][j] = 1 + rand() % 100;
