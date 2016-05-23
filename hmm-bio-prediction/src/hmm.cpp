@@ -116,11 +116,6 @@ HMM::HMM () // constructor with random generated parameters
     this -> T[66][66] = 1 + rand() % 100;
     // short loop 11-20 - o
     // long loop 1-10 - o
-    for (int i = 0; i < 10; i++)
-    {
-        this -> T[i + 77][77 + 20 - i] = 1 + rand() % 100;
-        this -> T[i + 77][77 + 21 - i] = 1 + rand() % 100;
-    }
     // out glob - o
     this -> T[87][87] = 1 + rand() % 100;
     // long loop 11-20 - o
